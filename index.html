@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>नेपाल कानूनी शब्दकोश</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Add manifest for PWA -->
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <header>
+        <h1>नेपाल कानूनी शब्दकोश</h1>
+    </header>
+
+    <main>
+        <!-- Search section -->
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="शब्द खोज्नुहोस्..." autofocus>
+        </div>
+        <div id="search-results" class="results"></div>
+
+        <!-- Alphabetical browse section -->
+        <div class="browse-section">
+            <h2>वर्णानुक्रम</h2>
+            <div class="browse-letters" id="browse-letters">
+                <!-- Each letter is a span with class and data-letter -->
+                <span class="browse-letter" data-letter="क">क</span>
+                <span class="browse-letter" data-letter="ख">ख</span>
+                <span class="browse-letter" data-letter="ग">ग</span>
+                <span class="browse-letter" data-letter="घ">घ</span>
+                <span class="browse-letter" data-letter="ङ">ङ</span>
+                <span class="browse-letter" data-letter="च">च</span>
+                <span class="browse-letter" data-letter="छ">छ</span>
+                <span class="browse-letter" data-letter="ज">ज</span>
+                <span class="browse-letter" data-letter="झ">झ</span>
+                <span class="browse-letter" data-letter="ञ">ञ</span>
+                <span class="browse-letter" data-letter="ट">ट</span>
+                <span class="browse-letter" data-letter="ठ">ठ</span>
+                <span class="browse-letter" data-letter="ड">ड</span>
+                <span class="browse-letter" data-letter="ढ">ढ</span>
+                <span class="browse-letter" data-letter="ण">ण</span>
+                <span class="browse-letter" data-letter="त">त</span>
+                <span class="browse-letter" data-letter="थ">थ</span>
+                <span class="browse-letter" data-letter="द">द</span>
+                <span class="browse-letter" data-letter="ध">ध</span>
+                <span class="browse-letter" data-letter="न">न</span>
+                <span class="browse-letter" data-letter="प">प</span>
+                <span class="browse-letter" data-letter="फ">फ</span>
+                <span class="browse-letter" data-letter="ब">ब</span>
+                <span class="browse-letter" data-letter="भ">भ</span>
+                <span class="browse-letter" data-letter="म">म</span>
+                <span class="browse-letter" data-letter="य">य</span>
+                <span class="browse-letter" data-letter="र">र</span>
+                <span class="browse-letter" data-letter="ल">ल</span>
+                <span class="browse-letter" data-letter="व">व</span>
+                <span class="browse-letter" data-letter="श">श</span>
+                <span class="browse-letter" data-letter="ष">ष</span>
+                <span class="browse-letter" data-letter="स">स</span>
+                <span class="browse-letter" data-letter="ह">ह</span>
+                <span class="browse-letter" data-letter="क्ष">क्ष</span>
+                <span class="browse-letter" data-letter="त्र">त्र</span>
+                <span class="browse-letter" data-letter="ज्ञ">ज्ञ</span>
+            </div>
+        </div>
+
+        <div class="info-buttons">
+            <div id="abbr-tooltip" class="abbr-tooltip hidden"></div>
+            <button id="show-abbr" class="text-button">List of abbreviations</button>
+            <button id="show-about" class="text-button">About the app</button>
+        </div>
+        <div id="info-panel" class="info-panel hidden">
+            <!-- content will be inserted by JavaScript -->
+        </div>
+
+        <div id="browse-results" class="results"></div>
+    </main>
+
+    <footer>
+        <p>developed by aadarsha</p>
+    </footer>
+
+    <script src="script.js"></script>
+    <!-- Register service worker for offline capability -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registered', reg))
+                    .catch(err => console.log('Service Worker registration failed', err));
+            });
+        }
+    </script>
+</body>
+</html>

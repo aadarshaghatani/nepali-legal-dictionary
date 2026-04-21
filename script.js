@@ -1,66 +1,34 @@
 // ── State ─────────────────────────────────────────────────────────────────────
-let dictionaryData = [];
-let letterCounts   = {};
-let activeLetter   = null;
-let activePanel    = null; // 'abbr' | 'about' | null
+let dictionaryData   = [];
+let letterCounts     = {};
+let activeLetter     = null;
+let activePanel      = null;
 let focusedCardIndex = -1;
+let currentQuery     = '';
 
 // ── Abbreviation map ──────────────────────────────────────────────────────────
 const abbreviationMap = {
-    'सं.':     'संस्कृत',
-    'अ.':      'अरबी',
-    'फा.':     'फारसी',
-    'अङ्.':    'अङ्ग्रेजी',
-    'प्रा.':   'प्राकृत',
-    'नेवा.':   'नेवारी',
-    'हि.':     'हिन्दी',
-    'उ.':      'उर्दू',
-    'पोर्त.':  'पोर्तगाली',
-    'तु.':     'तुर्की',
-    'ना.':     'नाम',
-    'क्रि.':   'क्रिया',
-    'वि.':     'विशेषण',
-    'क्रिवि.': 'क्रियाविशेषण',
-    'नाप.':    'नामपदावली',
-    'सर्व.':   'सर्वनाम',
-    'संयो.':   'संयोजक',
-    'हे.':     'हेर्नुहोस्',
-    'देखि':    'देखि',
-    'सम्म':    'सम्म',
+    'सं.': 'संस्कृत', 'अ.': 'अरबी', 'फा.': 'फारसी', 'अङ्.': 'अङ्ग्रेजी',
+    'प्रा.': 'प्राकृत', 'नेवा.': 'नेवारी', 'हि.': 'हिन्दी', 'उ.': 'उर्दू',
+    'पोर्त.': 'पोर्तगाली', 'तु.': 'तुर्की', 'ना.': 'नाम', 'क्रि.': 'क्रिया',
+    'वि.': 'विशेषण', 'क्रिवि.': 'क्रियाविशेषण', 'नाप.': 'नामपदावली',
+    'सर्व.': 'सर्वनाम', 'संयो.': 'संयोजक', 'हे.': 'हेर्नुहोस्',
+    'देखि': 'देखि', 'सम्म': 'सम्म',
 };
-
-// ── Theme ──────────────────────────────────────────────────────────────────────
-function initTheme() {
-    const saved = localStorage.getItem('nyayakosh-theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const theme = saved || (prefersDark ? 'dark' : 'light');
-    document.documentElement.setAttribute('data-theme', theme);
-}
-
-function toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('nyayakosh-theme', next);
-}
 
 // ── Tooltip ───────────────────────────────────────────────────────────────────
 let tooltipDiv;
 
 function showTooltip(text, x, y) {
     tooltipDiv.textContent = text;
-    // Keep tooltip within viewport
+    tooltipDiv.classList.remove('hidden');
+    const tw = tooltipDiv.offsetWidth;
     const margin = 8;
-    const tw = tooltipDiv.offsetWidth || 120;
     const left = Math.min(x, window.innerWidth - tw - margin);
     tooltipDiv.style.left = Math.max(margin, left) + 'px';
     tooltipDiv.style.top  = y + 'px';
-    tooltipDiv.classList.remove('hidden');
 }
-
-function hideTooltip() {
-    tooltipDiv.classList.add('hidden');
-}
+function hideTooltip() { tooltipDiv.classList.add('hidden'); }
 
 function attachTooltip(el, abbr) {
     const meaning = abbreviationMap[abbr];
@@ -82,40 +50,35 @@ function escapeRE(s) {
     return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/**
- * Wrap occurrences of `query` inside `text` with <mark> tags.
- * Returns a <span> element.
- *
- * BUG FIX: Using split() instead of RegExp.test() inside forEach
- * to avoid lastIndex sticky issues.
- */
+// Highlight: split on capturing group — no lastIndex bugs, works with Nepali Unicode
 function highlight(text, query) {
-    const span = document.createElement('span');
-    if (!query || !text) {
-        span.textContent = text || '';
-        return span;
+    const container = document.createElement('span');
+    if (!query || !text) { container.textContent = text || ''; return container; }
+    let parts;
+    try {
+        const re = new RegExp('(' + escapeRE(query.trim()) + ')', 'gi');
+        parts = text.split(re);
+    } catch(e) {
+        container.textContent = text;
+        return container;
     }
-    const re = new RegExp(`(${escapeRE(query)})`, 'gi');
-    const parts = text.split(re);
-    // After split with capturing group, matches appear at odd indices
     parts.forEach((part, i) => {
+        if (!part) return;
         if (i % 2 === 1) {
-            // This is a matched segment
             const mark = document.createElement('mark');
             mark.textContent = part;
-            span.appendChild(mark);
-        } else if (part) {
-            span.appendChild(document.createTextNode(part));
+            container.appendChild(mark);
+        } else {
+            container.appendChild(document.createTextNode(part));
         }
     });
-    return span;
+    return container;
 }
 
-// ── Build letter counts ───────────────────────────────────────────────────────
+// ── Letter counts ─────────────────────────────────────────────────────────────
 function buildLetterCounts() {
-    letterCounts = {};
-    const letters = [...document.querySelectorAll('.browse-letter')].map(el => el.dataset.letter);
-    letters.forEach(letter => {
+    document.querySelectorAll('.browse-letter').forEach(el => {
+        const letter = el.dataset.letter;
         letterCounts[letter] = dictionaryData.filter(
             e => e.word && e.word.trim().startsWith(letter)
         ).length;
@@ -125,40 +88,35 @@ function buildLetterCounts() {
 function updateLetterCountBadges() {
     document.querySelectorAll('.browse-letter').forEach(el => {
         const letter = el.dataset.letter;
-        const count = letterCounts[letter] || 0;
         let badge = el.querySelector('.letter-count');
         if (!badge) {
             badge = document.createElement('span');
             badge.className = 'letter-count';
             el.appendChild(badge);
         }
+        const count = letterCounts[letter] || 0;
         badge.textContent = count > 0 ? count : '';
     });
 }
 
-// ── Ranked search ─────────────────────────────────────────────────────────────
+// ── Search ────────────────────────────────────────────────────────────────────
 function searchDictionary(query) {
     if (!query || !query.trim()) return [];
     const q = query.trim().toLowerCase();
-
-    const tier1 = [], tier2 = [], tier3 = [], tier4 = [];
-
+    const tier1=[], tier2=[], tier3=[], tier4=[];
     dictionaryData.forEach(entry => {
-        const word = (entry.word || '').toLowerCase();
+        const word = (entry.word       || '').toLowerCase();
         const def  = (entry.definition || '').toLowerCase();
-        const eng  = (entry.english || '').toLowerCase();
-
-        if (word === q)               return tier1.push(entry);
-        if (word.startsWith(q))       return tier2.push(entry);
-        if (word.includes(q))         return tier3.push(entry);
+        const eng  = (entry.english    || '').toLowerCase();
+        if (word === q)                         return tier1.push(entry);
+        if (word.startsWith(q))                 return tier2.push(entry);
+        if (word.includes(q))                   return tier3.push(entry);
         if (def.includes(q) || eng.includes(q)) return tier4.push(entry);
     });
-
     tier1.forEach(e => e._matchTier = 'match-word');
     tier2.forEach(e => e._matchTier = 'match-word-start');
     tier3.forEach(e => e._matchTier = 'match-word');
     tier4.forEach(e => e._matchTier = 'match-content');
-
     return [...tier1, ...tier2, ...tier3, ...tier4];
 }
 
@@ -169,29 +127,28 @@ function getWordsByLetter(letter) {
 
 // ── Copy word ─────────────────────────────────────────────────────────────────
 function copyWord(word, btn) {
-    navigator.clipboard.writeText(word).then(() => {
-        const orig = btn.textContent;
-        btn.textContent = 'copied ✓';
-        btn.classList.add('copied');
-        setTimeout(() => {
-            btn.textContent = orig;
-            btn.classList.remove('copied');
-        }, 1800);
-    }).catch(() => {
-        // Fallback
+    const orig = btn.textContent;
+    const doFallback = () => {
         const ta = document.createElement('textarea');
         ta.value = word;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
+        ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none;';
         document.body.appendChild(ta);
         ta.select();
-        document.execCommand('copy');
+        try { document.execCommand('copy'); } catch(e) {}
         document.body.removeChild(ta);
-    });
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(word).catch(doFallback);
+    } else {
+        doFallback();
+    }
+    btn.textContent = 'copied ✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1800);
 }
 
-// ── Render cards ──────────────────────────────────────────────────────────────
-function renderResults(results, targetId, clearId, emptyMsg, query = '') {
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderResults(results, targetId, clearId, emptyMsg, query) {
     const target = document.getElementById(targetId);
     const other  = document.getElementById(clearId);
     if (!target) return;
@@ -199,7 +156,11 @@ function renderResults(results, targetId, clearId, emptyMsg, query = '') {
     target.innerHTML = '';
     if (other) other.innerHTML = '';
 
-    updateResultCount(targetId, results.length, query);
+    const countEl = document.getElementById('result-count');
+    if (countEl) {
+        countEl.textContent = (targetId === 'search-results' && query && results.length)
+            ? `${results.length} परिणाम फेला पर्‍यो` : '';
+    }
 
     if (!results.length) {
         target.innerHTML = `<div class="no-results">${emptyMsg}</div>`;
@@ -207,6 +168,7 @@ function renderResults(results, targetId, clearId, emptyMsg, query = '') {
     }
 
     const frag = document.createDocumentFragment();
+    const q = query || '';
 
     results.forEach((entry, i) => {
         const card = document.createElement('div');
@@ -214,33 +176,28 @@ function renderResults(results, targetId, clearId, emptyMsg, query = '') {
         card.setAttribute('role', 'listitem');
         card.setAttribute('tabindex', '0');
         card.dataset.index = i;
-        // Staggered animation delay
-        card.style.animationDelay = `${Math.min(i * 0.03, 0.3)}s`;
+        card.style.animationDelay = `${Math.min(i * 0.025, 0.25)}s`;
 
         // Copy button
         if (entry.word) {
             const copyBtn = document.createElement('button');
             copyBtn.className = 'copy-btn';
             copyBtn.textContent = 'copy';
-            copyBtn.setAttribute('aria-label', `Copy ${entry.word}`);
-            copyBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                copyWord(entry.word, copyBtn);
-            });
+            copyBtn.setAttribute('aria-label', `Copy: ${entry.word}`);
+            copyBtn.addEventListener('click', e => { e.stopPropagation(); copyWord(entry.word, copyBtn); });
             card.appendChild(copyBtn);
         }
 
         // Word
         const wordEl = document.createElement('div');
         wordEl.className = 'result-word';
-        wordEl.appendChild(highlight(entry.word || '', query));
+        wordEl.appendChild(highlight(entry.word || '', q));
         card.appendChild(wordEl);
 
-        // Meta
+        // Meta tags
         const metaParts = [];
         if (entry.part_of_speech) metaParts.push(entry.part_of_speech);
         if (entry.source_lang)    metaParts.push(`[${entry.source_lang}]`);
-
         if (metaParts.length) {
             const metaEl = document.createElement('div');
             metaEl.className = 'result-meta';
@@ -249,7 +206,7 @@ function renderResults(results, targetId, clearId, emptyMsg, query = '') {
                 span.className = 'result-pos abbr-trigger';
                 span.textContent = token;
                 let abbr = token;
-                if (abbr.startsWith('[') && abbr.endsWith(']')) abbr = abbr.slice(1, -1);
+                if (abbr.startsWith('[') && abbr.endsWith(']')) abbr = abbr.slice(1,-1);
                 span.setAttribute('data-abbr', abbr);
                 attachTooltip(span, abbr);
                 metaEl.appendChild(span);
@@ -262,7 +219,7 @@ function renderResults(results, targetId, clearId, emptyMsg, query = '') {
         if (entry.english && entry.english.trim()) {
             const engEl = document.createElement('div');
             engEl.className = 'result-english';
-            engEl.appendChild(highlight(entry.english, query));
+            engEl.appendChild(highlight(entry.english, q));
             card.appendChild(engEl);
         }
 
@@ -270,7 +227,7 @@ function renderResults(results, targetId, clearId, emptyMsg, query = '') {
         if (entry.definition) {
             const defEl = document.createElement('div');
             defEl.className = 'result-definition';
-            defEl.appendChild(highlight(entry.definition, query));
+            defEl.appendChild(highlight(entry.definition, q));
             card.appendChild(defEl);
         }
 
@@ -287,32 +244,14 @@ function renderResults(results, targetId, clearId, emptyMsg, query = '') {
 
     target.appendChild(frag);
 
-    // Smooth scroll to first result when searching
-    if (query && results.length > 0) {
-        const firstCard = target.querySelector('.result-card');
-        if (firstCard) {
-            setTimeout(() => {
-                firstCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }, 60);
-        }
+    // Scroll to first result when searching
+    if (q && results.length > 0) {
+        const first = target.querySelector('.result-card');
+        if (first) setTimeout(() => first.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
     }
 }
 
-// ── Result count ──────────────────────────────────────────────────────────────
-function updateResultCount(targetId, count, query) {
-    const countEl = document.getElementById('result-count');
-    if (!countEl) return;
-
-    if (targetId === 'search-results' && query) {
-        countEl.textContent = count
-            ? `${count} परिणाम फेला पर्‍यो`
-            : '';
-    } else {
-        countEl.textContent = '';
-    }
-}
-
-// ── Active letter state ───────────────────────────────────────────────────────
+// ── Active letter ─────────────────────────────────────────────────────────────
 function setActiveLetter(letter) {
     document.querySelectorAll('.browse-letter').forEach(el => {
         el.classList.toggle('active', el.dataset.letter === letter);
@@ -322,8 +261,8 @@ function setActiveLetter(letter) {
 
 // ── Info panel ────────────────────────────────────────────────────────────────
 const aboutHTML = `
-    <p>Nyayakosh (न्यायकोश) यो कानूनी शब्दकोश नेपाल कानून आयोगद्वारा प्रकाशित आधिकारिक कानूनी शब्दकोशमा आधारित छ।</p>
-    <p>यस एपद्वारा नेपाली भाषामा प्रयोग हुने कानून सम्बन्धी शब्दहरूको अर्थ, श्रोत र प्रयोगलाई सरल रूपमा प्रस्तुत गर्ने प्रयत्न गरिएको छ।</p>
+    <p><strong>Nyayakosh (न्यायकोश)</strong> — नेपाल कानून आयोगद्वारा प्रकाशित आधिकारिक कानूनी शब्दकोशमा आधारित।</p>
+    <p>नेपाली भाषामा प्रयोग हुने कानून सम्बन्धी शब्दहरूको अर्थ, श्रोत र प्रयोगलाई सरल रूपमा प्रस्तुत गर्ने प्रयत्न गरिएको छ।</p>
 `;
 
 function buildAbbrHTML() {
@@ -338,7 +277,6 @@ function togglePanel(panel, contentHTML) {
     const infoPanel = document.getElementById('info-panel');
     const abbrBtn   = document.getElementById('show-abbr');
     const aboutBtn  = document.getElementById('show-about');
-
     if (activePanel === panel) {
         infoPanel.classList.add('hidden');
         infoPanel.innerHTML = '';
@@ -354,163 +292,127 @@ function togglePanel(panel, contentHTML) {
     }
 }
 
-// ── Keyboard navigation ───────────────────────────────────────────────────────
+// ── Keyboard nav ──────────────────────────────────────────────────────────────
 function getVisibleCards() {
-    const searchCards = [...document.querySelectorAll('#search-results .result-card')];
-    const browseCards = [...document.querySelectorAll('#browse-results .result-card')];
-    return searchCards.length ? searchCards : browseCards;
+    const s = [...document.querySelectorAll('#search-results .result-card')];
+    const b = [...document.querySelectorAll('#browse-results .result-card')];
+    return s.length ? s : b;
 }
-
-function moveFocus(direction) {
+function moveFocus(dir) {
     const cards = getVisibleCards();
     if (!cards.length) return;
-    focusedCardIndex = Math.max(0, Math.min(cards.length - 1, focusedCardIndex + direction));
+    focusedCardIndex = Math.max(0, Math.min(cards.length-1, focusedCardIndex + dir));
     cards[focusedCardIndex].focus();
     cards[focusedCardIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-// ── Sticky header detection ───────────────────────────────────────────────────
+// ── Sticky detect ─────────────────────────────────────────────────────────────
 function initStickyDetect() {
     const wrapper = document.getElementById('search-sticky-wrapper');
-    if (!wrapper) return;
+    if (!wrapper || !window.IntersectionObserver) return;
     const sentinel = document.createElement('div');
-    sentinel.style.cssText = 'height:1px;margin-top:-1px;pointer-events:none;';
+    sentinel.style.cssText = 'height:1px;pointer-events:none;';
     wrapper.parentNode.insertBefore(sentinel, wrapper);
-
-    const obs = new IntersectionObserver(
-        ([entry]) => {
-            wrapper.classList.toggle('is-stuck', !entry.isIntersecting);
-        },
+    new IntersectionObserver(
+        ([e]) => wrapper.classList.toggle('is-stuck', !e.isIntersecting),
         { threshold: 0 }
-    );
-    obs.observe(sentinel);
+    ).observe(sentinel);
 }
 
 // ── Back to top ───────────────────────────────────────────────────────────────
 function initBackToTop() {
     const btn = document.getElementById('back-to-top');
     if (!btn) return;
-
-    window.addEventListener('scroll', () => {
-        btn.classList.toggle('visible', window.scrollY > 320);
-    }, { passive: true });
-
-    btn.addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
+    const check = () => btn.classList.toggle('visible', window.scrollY > 300);
+    window.addEventListener('scroll', check, { passive: true });
+    check(); // run immediately on load
+    btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    initTheme();
     tooltipDiv = document.getElementById('abbr-tooltip');
 
     const searchInput = document.getElementById('search-input');
     const clearBtn    = document.getElementById('clear-search');
 
-    // Theme toggle
-    const themeBtn = document.getElementById('theme-toggle');
-    if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+    if (!searchInput) { console.error('search-input not found'); return; }
 
-    // Search handler
     const handleSearch = debounce(() => {
         const q = searchInput.value;
-        clearBtn && clearBtn.classList.toggle('visible', q.length > 0);
+        currentQuery = q;
+        if (clearBtn) clearBtn.classList.toggle('visible', q.length > 0);
         focusedCardIndex = -1;
 
         if (!q.trim()) {
             const letter = activeLetter || 'अ';
-            const results = getWordsByLetter(letter);
-            renderResults(results, 'browse-results', 'search-results',
+            setActiveLetter(letter);
+            renderResults(getWordsByLetter(letter), 'browse-results', 'search-results',
                 'यस अक्षरमा कुनै शब्द फेला परेन।', '');
         } else {
             setActiveLetter(null);
-            const results = searchDictionary(q);
-            renderResults(results, 'search-results', 'browse-results',
+            renderResults(searchDictionary(q), 'search-results', 'browse-results',
                 'कुनै परिणाम फेला परेन।', q.trim());
         }
     }, 220);
 
     searchInput.addEventListener('input', handleSearch);
 
-    // Clear button
-    clearBtn && clearBtn.addEventListener('click', () => {
-        searchInput.value = '';
-        searchInput.focus();
-        handleSearch();
-    });
+    // Clear button — this is what × does
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            searchInput.focus();
+            handleSearch();
+        });
+    }
 
-    // Keyboard shortcuts
     document.addEventListener('keydown', e => {
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            moveFocus(1);
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            moveFocus(-1);
-        } else if (e.key === 'Escape') {
-            if (document.activeElement !== searchInput) {
-                searchInput.focus();
-            } else {
-                searchInput.value = '';
-                handleSearch();
-            }
+        if (e.key === 'ArrowDown') { e.preventDefault(); moveFocus(1); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); moveFocus(-1); }
+        else if (e.key === 'Escape') {
+            if (searchInput.value) { searchInput.value = ''; handleSearch(); }
+            searchInput.focus();
         }
     });
 
-    // Letter browse
     document.querySelectorAll('.browse-letter').forEach(span => {
         span.addEventListener('click', function () {
             const letter = this.dataset.letter;
             setActiveLetter(letter);
             searchInput.value = '';
-            clearBtn && clearBtn.classList.remove('visible');
+            currentQuery = '';
+            if (clearBtn) clearBtn.classList.remove('visible');
             focusedCardIndex = -1;
-            const results = getWordsByLetter(letter);
-            renderResults(results, 'browse-results', 'search-results',
+            renderResults(getWordsByLetter(letter), 'browse-results', 'search-results',
                 'यस अक्षरमा कुनै शब्द फेला परेन।', '');
-            // Scroll to browse results
             setTimeout(() => {
-                document.getElementById('browse-results').scrollIntoView({
-                    behavior: 'smooth', block: 'start'
-                });
-            }, 60);
+                const el = document.getElementById('browse-results');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 80);
         });
     });
 
-    // Info panel
-    document.getElementById('show-abbr').addEventListener('click', () => {
-        togglePanel('abbr', buildAbbrHTML());
-    });
-    document.getElementById('show-about').addEventListener('click', () => {
-        togglePanel('about', aboutHTML);
-    });
+    document.getElementById('show-abbr').addEventListener('click', () => togglePanel('abbr', buildAbbrHTML()));
+    document.getElementById('show-about').addEventListener('click', () => togglePanel('about', aboutHTML));
 
-    // Sticky search + back to top
     initStickyDetect();
     initBackToTop();
 
-    // Load dictionary
     fetch('dictionary.json')
-        .then(r => {
-            if (!r.ok) throw new Error(`HTTP ${r.status}`);
-            return r.json();
-        })
+        .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
         .then(data => {
             dictionaryData = data;
-            console.log(`Loaded ${dictionaryData.length} entries.`);
+            console.log(`Nyayakosh: ${dictionaryData.length} entries loaded.`);
             buildLetterCounts();
             updateLetterCountBadges();
             setActiveLetter('अ');
-            const initial = getWordsByLetter('अ');
-            renderResults(initial, 'browse-results', 'search-results',
+            renderResults(getWordsByLetter('अ'), 'browse-results', 'search-results',
                 'यस अक्षरमा कुनै शब्द फेला परेन।', '');
         })
         .catch(err => {
-            console.error('Failed to load dictionary:', err);
-            const browseDiv = document.getElementById('browse-results');
-            if (browseDiv) {
-                browseDiv.innerHTML = '<div class="no-results">शब्दकोश लोड गर्न सकिएन। <br><small>dictionary.json फाइल फेला परेन।</small></div>';
-            }
+            console.error('dictionary.json load failed:', err);
+            const el = document.getElementById('browse-results');
+            if (el) el.innerHTML = `<div class="no-results">शब्दकोश लोड गर्न सकिएन।<br><small>dictionary.json फेला परेन।</small></div>`;
         });
 });

@@ -468,7 +468,6 @@ document.addEventListener('DOMContentLoaded', () => {
             dictionaryData = data;
             console.log(`Nyayakosh: ${dictionaryData.length} entries loaded.`);
             buildLetterCounts();
-            updateLetterCountBadges();
             setActiveLetter('अ');
             renderResults(getWordsByLetter('अ'), 'browse-results', 'search-results',
                 'यस अक्षरमा कुनै शब्द फेला परेन।', '');

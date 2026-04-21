@@ -462,6 +462,40 @@ document.addEventListener('DOMContentLoaded', () => {
     initStickyDetect();
     initBackToTop();
 
+    // ========== PWA INSTALL PROMPT ==========
+    let deferredPrompt;
+    const installPromptDiv = document.getElementById('install-prompt');
+    const installLink = document.getElementById('install-link');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (installPromptDiv) installPromptDiv.classList.remove('hidden');
+    });
+
+    if (installLink) {
+        installLink.addEventListener('click', () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted install');
+                    }
+                    deferredPrompt = null;
+                    if (installPromptDiv) installPromptDiv.classList.add('hidden');
+                });
+            } else {
+                alert('इन्स्टल गर्न ब्राउजरको मेनुबाट "Add to Home Screen" चयन गर्नुहोस्।');
+            }
+        });
+    }
+
+    window.addEventListener('appinstalled', () => {
+        if (installPromptDiv) installPromptDiv.classList.add('hidden');
+        deferredPrompt = null;
+    });
+    // ========== END PWA INSTALL PROMPT ==========
+
     fetch('dictionary.json')
         .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
         .then(data => {

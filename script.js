@@ -50,7 +50,7 @@ function escapeRE(s) {
     return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// Highlight: split on capturing group — no lastIndex bugs, works with Nepali Unicode
+// Highlight: split on capturing group — works with Nepali Unicode
 function highlight(text, query) {
     const container = document.createElement('span');
     if (!query || !text) { container.textContent = text || ''; return container; }
@@ -99,24 +99,42 @@ function updateLetterCountBadges() {
     });
 }
 
-// ── Search ────────────────────────────────────────────────────────────────────
+// ── Search (improved: trim, collapse spaces, better partial matching) ─────────
 function searchDictionary(query) {
     if (!query || !query.trim()) return [];
-    const q = query.trim().toLowerCase();
-    const tier1=[], tier2=[], tier3=[], tier4=[];
+    let q = query.trim().toLowerCase();
+    q = q.replace(/\s+/g, ' ');   // collapse multiple spaces into one
+
+    const tier1 = [], tier2 = [], tier3 = [], tier4 = [];
+
     dictionaryData.forEach(entry => {
-        const word = (entry.word       || '').toLowerCase();
+        const word = (entry.word || '').toLowerCase();
         const def  = (entry.definition || '').toLowerCase();
-        const eng  = (entry.english    || '').toLowerCase();
-        if (word === q)                         return tier1.push(entry);
-        if (word.startsWith(q))                 return tier2.push(entry);
-        if (word.includes(q))                   return tier3.push(entry);
-        if (def.includes(q) || eng.includes(q)) return tier4.push(entry);
+        const eng  = (entry.english || '').toLowerCase();
+
+        if (word === q) {
+            tier1.push(entry);
+        } else if (word.startsWith(q)) {
+            tier2.push(entry);
+        } else if (word.includes(q)) {
+            tier3.push(entry);
+        } else {
+            // Check if any word in definition or English STARTS WITH the query
+            const defWords = def.split(/\s+/);
+            const engWords = eng.split(/\s+/);
+            const matchInDef = defWords.some(w => w.startsWith(q));
+            const matchInEng = engWords.some(w => w.startsWith(q));
+            if (matchInDef || matchInEng) {
+                tier4.push(entry);
+            }
+        }
     });
+
     tier1.forEach(e => e._matchTier = 'match-word');
     tier2.forEach(e => e._matchTier = 'match-word-start');
     tier3.forEach(e => e._matchTier = 'match-word');
     tier4.forEach(e => e._matchTier = 'match-content');
+
     return [...tier1, ...tier2, ...tier3, ...tier4];
 }
 
@@ -339,6 +357,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!searchInput) { console.error('search-input not found'); return; }
 
     const handleSearch = debounce(() => {
+        const rawQuery = searchInput.value;
+        const trimmedQuery = rawQuery.trim();
+        // If the input is only spaces, treat as empty and clear it visually
+        if (trimmedQuery === '' && rawQuery !== '') {
+            searchInput.value = '';
+        }
         const q = searchInput.value;
         currentQuery = q;
         if (clearBtn) clearBtn.classList.toggle('visible', q.length > 0);
@@ -358,7 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     searchInput.addEventListener('input', handleSearch);
 
-    // Clear button — this is what × does
+    // Clear button
     if (clearBtn) {
         clearBtn.addEventListener('click', () => {
             searchInput.value = '';

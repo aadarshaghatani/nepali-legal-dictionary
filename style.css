@@ -631,3 +631,26 @@ footer {
         right: 0.8rem;
     }
 }
+
+.install-prompt {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--ink-light);
+    background: var(--maroon-faint);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    margin: 0.5rem 0 1rem;
+    font-style: italic;
+}
+.install-link {
+    color: var(--maroon);
+    text-decoration: underline;
+    cursor: pointer;
+    font-weight: 500;
+}
+.install-link:hover {
+    color: var(--maroon-deep);
+}
+.hidden {
+    display: none;
+}

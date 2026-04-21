@@ -8,12 +8,12 @@
     --ink:          #1a1714;
     --ink-mid:      #36302a;
     --ink-light:    #7a7065;
-    --burgundy:     #7a2d3e;
-    --burg-deep:    #5c1f2d;
-    --burg-light:   #a34d61;
-    --burg-pale:    #f5e8ec;
-    --burg-faint:   #faf0f2;
-    --white:        #fdfaf5;
+    /* Maroon palette based on #762c1f */
+    --maroon:       #762c1f;
+    --maroon-deep:  #5c2217;
+    --maroon-light: #9a4a3a;
+    --maroon-pale:  #f5e6e2;
+    --maroon-faint: #faf0ed;
     --rule-color:   #d6ccba;
     --shadow:       rgba(26,23,20,0.06);
     --shadow-md:    rgba(26,23,20,0.12);
@@ -33,12 +33,11 @@
     --ink:          #f0e8d8;
     --ink-mid:      #d8cebb;
     --ink-light:    #8c8070;
-    --burgundy:     #c46278;
-    --burg-deep:    #e07a90;
-    --burg-light:   #a34d61;
-    --burg-pale:    #2a1820;
-    --burg-faint:   #221318;
-    --white:        #231e1a;
+    --maroon:       #c46a58;
+    --maroon-deep:  #e08a78;
+    --maroon-light: #a34d3b;
+    --maroon-pale:  #2a1a16;
+    --maroon-faint: #221310;
     --rule-color:   #3a3028;
     --shadow:       rgba(0,0,0,0.25);
     --shadow-md:    rgba(0,0,0,0.4);
@@ -65,7 +64,6 @@ body {
     min-height: 100vh;
 }
 
-
 /* ── Header ──────────────────────────────────── */
 header {
     text-align: center;
@@ -89,11 +87,10 @@ header::before {
     position: relative;
 }
 
-
 .header-rule-top,
 .header-rule-bottom {
     height: 1px;
-    background: linear-gradient(to right, transparent, var(--burgundy), transparent);
+    background: linear-gradient(to right, transparent, var(--maroon), transparent);
     margin: 0.5rem 0;
     opacity: 0.35;
     animation: fadeIn 1s ease both;
@@ -120,11 +117,10 @@ header::before {
     font-weight: 400;
     font-style: italic;
     font-size: clamp(1.1rem, 3vw, 1.6rem);
-    color: var(--burgundy);
+    color: var(--maroon);
     letter-spacing: 0.06em;
     line-height: 1.3;
 }
-
 
 /* ── Keyframes ───────────────────────────────── */
 @keyframes fadeIn {
@@ -209,13 +205,13 @@ main {
 
 #search-input:focus {
     border-color: var(--rule-color);
-    border-bottom-color: var(--burgundy);
-    box-shadow: 0 3px 0 -1px var(--burg-faint), 0 1px 12px var(--shadow);
+    border-bottom-color: var(--maroon);
+    box-shadow: 0 3px 0 -1px var(--maroon-faint), 0 1px 12px var(--shadow);
 }
 
 #search-input:focus + .search-icon,
 .search-wrapper:focus-within .search-icon {
-    color: var(--burgundy);
+    color: var(--maroon);
 }
 
 .clear-btn {
@@ -232,7 +228,7 @@ main {
     transition: color var(--transition);
     border-radius: 50%;
 }
-.clear-btn:hover { color: var(--burgundy); }
+.clear-btn:hover { color: var(--maroon); }
 .clear-btn.visible { display: block; }
 
 .result-count {
@@ -302,16 +298,16 @@ main {
 }
 
 .browse-letter:hover {
-    background-color: var(--burg-faint);
-    color: var(--burgundy);
-    border-color: var(--burg-pale);
+    background-color: var(--maroon-faint);
+    color: var(--maroon);
+    border-color: var(--maroon-pale);
 }
-.browse-letter:hover .letter-count { color: var(--burg-light); }
+.browse-letter:hover .letter-count { color: var(--maroon-light); }
 
 .browse-letter.active {
-    background-color: var(--burgundy);
+    background-color: var(--maroon);
     color: var(--white);
-    border-color: var(--burgundy);
+    border-color: var(--maroon);
 }
 .browse-letter.active .letter-count { color: rgba(255,255,255,0.7); }
 
@@ -339,8 +335,8 @@ main {
 }
 .text-button:hover,
 .text-button.active {
-    color: var(--burgundy);
-    border-bottom-color: var(--burg-light);
+    color: var(--maroon);
+    border-bottom-color: var(--maroon-light);
 }
 
 /* ── Info panel ──────────────────────────────── */
@@ -349,7 +345,7 @@ main {
     padding: 1.5rem 1.8rem;
     background-color: var(--white);
     border: 1px solid var(--rule-color);
-    border-left: 3px solid var(--burgundy);
+    border-left: 3px solid var(--maroon);
     font-size: 0.93rem;
     line-height: 1.8;
     color: var(--ink-mid);
@@ -371,7 +367,7 @@ main {
 .abbr-list li { font-size: 0.88rem; }
 .abbr-term {
     font-weight: 600;
-    color: var(--burgundy);
+    color: var(--maroon);
     margin-right: 0.3rem;
 }
 
@@ -393,8 +389,8 @@ main {
 }
 .abbr-trigger {
     cursor: help;
-    border-bottom: 1px dotted var(--burgundy);
-    color: var(--burgundy);
+    border-bottom: 1px dotted var(--maroon);
+    color: var(--maroon);
 }
 
 /* ── Result cards ────────────────────────────── */
@@ -413,15 +409,15 @@ main {
 }
 
 .result-card:hover {
-    border-left-color: var(--burgundy);
+    border-left-color: var(--maroon);
     box-shadow: 0 4px 20px var(--shadow);
     transform: translateX(2px);
 }
 
 .result-card:focus {
     outline: none;
-    border-left-color: var(--burgundy);
-    box-shadow: 0 0 0 2px var(--burg-pale), 0 4px 20px var(--shadow);
+    border-left-color: var(--maroon);
+    box-shadow: 0 0 0 2px var(--maroon-pale), 0 4px 20px var(--shadow);
 }
 
 /* Copy button on card */
@@ -445,14 +441,14 @@ main {
 .result-card:hover .copy-btn,
 .result-card:focus .copy-btn { opacity: 1; }
 .copy-btn:hover {
-    color: var(--burgundy);
-    border-color: var(--burg-pale);
-    background-color: var(--burg-faint);
+    color: var(--maroon);
+    border-color: var(--maroon-pale);
+    background-color: var(--maroon-faint);
 }
 .copy-btn.copied {
-    color: var(--burgundy);
-    border-color: var(--burg-pale);
-    background-color: var(--burg-faint);
+    color: var(--maroon);
+    border-color: var(--maroon-pale);
+    background-color: var(--maroon-faint);
 }
 
 .result-word {
@@ -486,7 +482,7 @@ main {
 
 .result-english {
     font-style: italic;
-    color: var(--burgundy);
+    color: var(--maroon);
     font-size: 1rem;
     margin-bottom: 0.75rem;
     font-family: var(--font-body);
@@ -542,7 +538,7 @@ mark {
     width: 2.4rem;
     height: 2.4rem;
     border-radius: 50%;
-    background: var(--burgundy);
+    background: var(--maroon);
     color: var(--white);
     border: none;
     cursor: pointer;
@@ -563,7 +559,7 @@ mark {
     pointer-events: auto;
 }
 .back-to-top:hover {
-    background: var(--burg-deep);
+    background: var(--maroon-deep);
     box-shadow: 0 4px 20px var(--shadow-md);
     transform: translateY(-2px);
 }
@@ -575,7 +571,7 @@ footer {
     padding: 0 1.5rem;
 }
 .footer-ornament {
-    color: var(--burgundy);
+    color: var(--maroon);
     opacity: 0.35;
     font-size: 1.1rem;
     display: block;

@@ -5,26 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>नेपाली कानूनी शब्दकोश</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Add manifest for PWA -->
     <link rel="manifest" href="manifest.json">
 </head>
 <body>
     <header>
-        <h1>नेपाली कानूनी शब्दकोश</h1>
+        <div class="header-inner">
+            <div class="header-rule"></div>
+            <h1>नेपाली कानूनी शब्दकोश</h1>
+            <p class="header-sub">Nepal Law Commission Legal Dictionary</p>
+            <div class="header-rule"></div>
+        </div>
     </header>
 
     <main>
-        <!-- Search section -->
         <div class="search-container">
-            <input type="text" id="search-input" placeholder="शब्द खोज्नुहोस्..." autofocus>
+            <div class="search-wrapper">
+                <span class="search-icon">⌕</span>
+                <input type="text" id="search-input" placeholder="शब्द वा परिभाषा खोज्नुहोस्…" autofocus autocomplete="off">
+                <button id="clear-search" class="clear-btn" aria-label="Clear search">×</button>
+            </div>
+            <div id="result-count" class="result-count"></div>
         </div>
-        <div id="search-results" class="results"></div>
 
-        <!-- Alphabetical browse section -->
+        <div id="search-results" class="results" role="list"></div>
+
         <div class="browse-section">
             <h2>वर्णानुक्रम</h2>
             <div class="browse-letters" id="browse-letters">
-                <!-- Each letter is a span with class and data-letter -->
+                <span class="browse-letter" data-letter="अ">अ</span>
+                <span class="browse-letter" data-letter="आ">आ</span>
+                <span class="browse-letter" data-letter="इ">इ</span>
+                <span class="browse-letter" data-letter="ई">ई</span>
+                <span class="browse-letter" data-letter="उ">उ</span>
+                <span class="browse-letter" data-letter="ऊ">ऊ</span>
+                <span class="browse-letter" data-letter="ए">ए</span>
+                <span class="browse-letter" data-letter="ओ">ओ</span>
                 <span class="browse-letter" data-letter="क">क</span>
                 <span class="browse-letter" data-letter="ख">ख</span>
                 <span class="browse-letter" data-letter="ग">ग</span>
@@ -66,28 +81,26 @@
 
         <div class="info-buttons">
             <div id="abbr-tooltip" class="abbr-tooltip hidden"></div>
-            <button id="show-abbr" class="text-button">सङ्केत सूची </button>
+            <button id="show-abbr" class="text-button">सङ्केत सूची</button>
             <button id="show-about" class="text-button">यस एपबारे</button>
         </div>
-        <div id="info-panel" class="info-panel hidden">
-            <!-- content will be inserted by JavaScript -->
-        </div>
+        <div id="info-panel" class="info-panel hidden"></div>
 
-        <div id="browse-results" class="results"></div>
+        <div id="browse-results" class="results" role="list"></div>
     </main>
 
     <footer>
+        <div class="footer-rule"></div>
         <p>developed by ai, ctrl + c + v by aadarsha</p>
     </footer>
 
     <script src="script.js"></script>
-    <!-- Register service worker for offline capability -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('Service Worker registered', reg))
-                    .catch(err => console.log('Service Worker registration failed', err));
+                    .then(reg => console.log('SW registered', reg))
+                    .catch(err => console.log('SW registration failed', err));
             });
         }
     </script>

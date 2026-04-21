@@ -50,20 +50,48 @@ function escapeRE(s) {
     return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// Highlight: split on capturing group — works with Nepali Unicode
+// Normalise text: trim, collapse multiple spaces, optionally normalise Unicode
+function normaliseText(str) {
+    if (!str) return '';
+    return str.trim().replace(/\s+/g, ' ');
+}
+
+// Highlight multiple words separately
 function highlight(text, query) {
     const container = document.createElement('span');
-    if (!query || !text) { container.textContent = text || ''; return container; }
+    if (!query || !text) {
+        container.textContent = text || '';
+        return container;
+    }
+
+    let q = normaliseText(query);
+    if (q === '') {
+        container.textContent = text;
+        return container;
+    }
+
+    // Split query into words (Nepali words are separated by spaces)
+    const queryWords = q.split(/\s+/).filter(w => w.length > 0);
+    if (queryWords.length === 0) {
+        container.textContent = text;
+        return container;
+    }
+
+    // Build a single regex that matches any of the query words
+    const escapedWords = queryWords.map(w => escapeRE(w));
+    const regex = new RegExp('(' + escapedWords.join('|') + ')', 'gi');
+
     let parts;
     try {
-        const re = new RegExp('(' + escapeRE(query.trim()) + ')', 'gi');
-        parts = text.split(re);
+        parts = text.split(regex);
     } catch(e) {
         container.textContent = text;
         return container;
     }
+
     parts.forEach((part, i) => {
         if (!part) return;
+        // Odd indices are the matched words
         if (i % 2 === 1) {
             const mark = document.createElement('mark');
             mark.textContent = part;
@@ -80,7 +108,7 @@ function buildLetterCounts() {
     document.querySelectorAll('.browse-letter').forEach(el => {
         const letter = el.dataset.letter;
         letterCounts[letter] = dictionaryData.filter(
-            e => e.word && e.word.trim().startsWith(letter)
+            e => e.word && normaliseText(e.word).startsWith(letter)
         ).length;
     });
 }
@@ -99,31 +127,41 @@ function updateLetterCountBadges() {
     });
 }
 
-// ── Search (improved: trim, collapse spaces, better partial matching) ─────────
+// ── Search (improved: normalised, multi‑word, word‑start in definitions) ─────
 function searchDictionary(query) {
     if (!query || !query.trim()) return [];
-    let q = query.trim().toLowerCase();
-    q = q.replace(/\s+/g, ' ');   // collapse multiple spaces into one
+    let q = normaliseText(query).toLowerCase();
+    if (q === '') return [];
 
+    const queryWords = q.split(/\s+/);
     const tier1 = [], tier2 = [], tier3 = [], tier4 = [];
 
     dictionaryData.forEach(entry => {
-        const word = (entry.word || '').toLowerCase();
-        const def  = (entry.definition || '').toLowerCase();
-        const eng  = (entry.english || '').toLowerCase();
+        const word = normaliseText(entry.word || '').toLowerCase();
+        const def  = normaliseText(entry.definition || '').toLowerCase();
+        const eng  = normaliseText(entry.english || '').toLowerCase();
 
-        if (word === q) {
+        // Helper: check if any query word matches a certain condition
+        const matches = (condition) => queryWords.some(w => condition(w));
+
+        // Exact match on full word (any query word exactly equals the whole word)
+        if (matches(w => word === w)) {
             tier1.push(entry);
-        } else if (word.startsWith(q)) {
+        }
+        // Word starts with any query word
+        else if (matches(w => word.startsWith(w))) {
             tier2.push(entry);
-        } else if (word.includes(q)) {
+        }
+        // Word contains any query word
+        else if (matches(w => word.includes(w))) {
             tier3.push(entry);
-        } else {
-            // Check if any word in definition or English STARTS WITH the query
+        }
+        // Definition or English contains any query word as a word start
+        else {
             const defWords = def.split(/\s+/);
             const engWords = eng.split(/\s+/);
-            const matchInDef = defWords.some(w => w.startsWith(q));
-            const matchInEng = engWords.some(w => w.startsWith(q));
+            const matchInDef = queryWords.some(w => defWords.some(dw => dw.startsWith(w)));
+            const matchInEng = queryWords.some(w => engWords.some(ew => ew.startsWith(w)));
             if (matchInDef || matchInEng) {
                 tier4.push(entry);
             }
@@ -140,7 +178,7 @@ function searchDictionary(query) {
 
 function getWordsByLetter(letter) {
     if (!letter) return [];
-    return dictionaryData.filter(e => e.word && e.word.trim().startsWith(letter));
+    return dictionaryData.filter(e => e.word && normaliseText(e.word).startsWith(letter));
 }
 
 // ── Copy word ─────────────────────────────────────────────────────────────────
@@ -186,7 +224,8 @@ function renderResults(results, targetId, clearId, emptyMsg, query) {
     }
 
     const frag = document.createDocumentFragment();
-    const q = query || '';
+    // Use normalised query for highlighting (without extra spaces)
+    const highlightQuery = query ? normaliseText(query) : '';
 
     results.forEach((entry, i) => {
         const card = document.createElement('div');
@@ -209,7 +248,7 @@ function renderResults(results, targetId, clearId, emptyMsg, query) {
         // Word
         const wordEl = document.createElement('div');
         wordEl.className = 'result-word';
-        wordEl.appendChild(highlight(entry.word || '', q));
+        wordEl.appendChild(highlight(entry.word || '', highlightQuery));
         card.appendChild(wordEl);
 
         // Meta tags
@@ -237,7 +276,7 @@ function renderResults(results, targetId, clearId, emptyMsg, query) {
         if (entry.english && entry.english.trim()) {
             const engEl = document.createElement('div');
             engEl.className = 'result-english';
-            engEl.appendChild(highlight(entry.english, q));
+            engEl.appendChild(highlight(entry.english, highlightQuery));
             card.appendChild(engEl);
         }
 
@@ -245,7 +284,7 @@ function renderResults(results, targetId, clearId, emptyMsg, query) {
         if (entry.definition) {
             const defEl = document.createElement('div');
             defEl.className = 'result-definition';
-            defEl.appendChild(highlight(entry.definition, q));
+            defEl.appendChild(highlight(entry.definition, highlightQuery));
             card.appendChild(defEl);
         }
 
@@ -263,7 +302,7 @@ function renderResults(results, targetId, clearId, emptyMsg, query) {
     target.appendChild(frag);
 
     // Scroll to first result when searching
-    if (q && results.length > 0) {
+    if (highlightQuery && results.length > 0) {
         const first = target.querySelector('.result-card');
         if (first) setTimeout(() => first.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
     }
@@ -343,7 +382,7 @@ function initBackToTop() {
     if (!btn) return;
     const check = () => btn.classList.toggle('visible', window.scrollY > 300);
     window.addEventListener('scroll', check, { passive: true });
-    check(); // run immediately on load
+    check();
     btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 }
 
@@ -357,10 +396,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!searchInput) { console.error('search-input not found'); return; }
 
     const handleSearch = debounce(() => {
-        const rawQuery = searchInput.value;
-        const trimmedQuery = rawQuery.trim();
-        // If the input is only spaces, treat as empty and clear it visually
-        if (trimmedQuery === '' && rawQuery !== '') {
+        const rawValue = searchInput.value;
+        // Normalise the input (trim + collapse spaces)
+        const normalised = normaliseText(rawValue);
+        // If the input becomes empty after normalisation, clear the field visually
+        if (normalised === '' && rawValue !== '') {
             searchInput.value = '';
         }
         const q = searchInput.value;
@@ -376,13 +416,12 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             setActiveLetter(null);
             renderResults(searchDictionary(q), 'search-results', 'browse-results',
-                'कुनै परिणाम फेला परेन।', q.trim());
+                'कुनै परिणाम फेला परेन।', q);
         }
     }, 220);
 
     searchInput.addEventListener('input', handleSearch);
 
-    // Clear button
     if (clearBtn) {
         clearBtn.addEventListener('click', () => {
             searchInput.value = '';

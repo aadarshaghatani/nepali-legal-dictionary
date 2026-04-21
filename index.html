@@ -1,36 +1,52 @@
 <!DOCTYPE html>
-<html lang="ne">
+<html lang="ne" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>नेपाली कानूनी शब्दकोश</title>
+    <title>Nyayakosh — न्यायकोश</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
 </head>
 <body>
+
+    <!-- Theme toggle -->
+    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+        <span class="theme-icon">◐</span>
+    </button>
+
     <header>
         <div class="header-inner">
-            <div class="header-rule"></div>
-            <h1>नेपाली कानूनी शब्दकोश</h1>
-            <p class="header-sub">Nepal Law Commission Legal Dictionary</p>
-            <div class="header-rule"></div>
+            <div class="header-ornament">❧</div>
+            <div class="header-rule-top"></div>
+            <div class="header-title-block">
+                <h1 class="title-latin">Nyayakosh</h1>
+                <h1 class="title-nepali">न्यायकोश</h1>
+            </div>
+            <div class="header-rule-bottom"></div>
+            <p class="header-sub">Nepal Law Commission · Legal Dictionary</p>
         </div>
     </header>
 
     <main>
-        <div class="search-container">
-            <div class="search-wrapper">
-                <span class="search-icon">⌕</span>
-                <input type="text" id="search-input" placeholder="शब्द वा परिभाषा खोज्नुहोस्…" autofocus autocomplete="off">
-                <button id="clear-search" class="clear-btn" aria-label="Clear search">×</button>
+
+        <!-- Sticky search wrapper -->
+        <div class="search-sticky-wrapper" id="search-sticky-wrapper">
+            <div class="search-container">
+                <div class="search-wrapper">
+                    <span class="search-icon">⌕</span>
+                    <input type="text" id="search-input" placeholder="शब्द वा परिभाषा खोज्नुहोस्…" autocomplete="off">
+                    <button id="clear-search" class="clear-btn" aria-label="Clear search">×</button>
+                </div>
+                <div id="result-count" class="result-count"></div>
             </div>
-            <div id="result-count" class="result-count"></div>
         </div>
 
         <div id="search-results" class="results" role="list"></div>
 
         <div class="browse-section">
-            <h2>वर्णानुक्रम</h2>
+            <h2 class="browse-heading">वर्णानुक्रम</h2>
             <div class="browse-letters" id="browse-letters">
                 <span class="browse-letter" data-letter="अ">अ</span>
                 <span class="browse-letter" data-letter="आ">आ</span>
@@ -89,9 +105,12 @@
         <div id="browse-results" class="results" role="list"></div>
     </main>
 
+    <!-- Back to top -->
+    <button id="back-to-top" class="back-to-top" aria-label="Back to top" title="Back to top">↑</button>
+
     <footer>
-        <div class="footer-rule"></div>
-        <p>developed by ai, ctrl + c + v by aadarsha</p>
+        <div class="footer-ornament">⁂</div>
+        <p class="footer-text">developed by ai, ctrl + c + v by aadarsha</p>
     </footer>
 
     <script src="script.js"></script>
